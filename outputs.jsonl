@@ -1,0 +1,10 @@
+{ "item": { "request": "I want to track my order #12345", "correct_label": "Tracking Orders" } }
+{ "item": { "request": "Where is my package? It says delivered but I don't have it", "correct_label": "Tracking Orders" } }
+{ "item": { "request": "What size should I pick for this jacket if my chest is 38 inches?", "correct_label": "Size Guide" } }
+{ "item": { "request": "I received the wrong color. How can I get this fixed?", "correct_label": "Customer Service" } }
+{ "item": { "request": "Can I change the delivery address after placing the order?", "correct_label": "Customer Service" } }
+{ "item": { "request": "Do you have gift options for birthdays under $50?", "correct_label": "Other" } }
+{ "item": { "request": "Help me track order ABC-9876", "correct_label": "Tracking Orders" } }
+{ "item": { "request": "Your size chart is confusing. I'm 5'9\" and 160 lbs—what size should I choose?", "correct_label": "Size Guide" } }
+{ "item": { "request": "My order is late. Can you check the status?", "correct_label": "Tracking Orders" } }
+{ "item": { "request": "I need to speak with someone about a damaged item I received", "correct_label": "Customer Service" } }
