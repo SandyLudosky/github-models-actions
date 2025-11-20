@@ -32,24 +32,37 @@ jobs:
         run: pytest -q
 
   call-model:
-    # Only run this job on pushes to main
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+  if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  runs-on: ubuntu-latest
 
-    steps:
-      - name: Call AI model
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl "https://models.github.ai/inference/chat/completions" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -d '{
-              "messages": [
-                {
-                  "role": "user",
-                  "content": "Explain the concept of recursion."
-                }
-              ],
-              "model": "openai/gpt-4o"
-            }'
+  steps:
+    - name: Call AI model and save result
+    - run: |
+        RESPONSE=$(curl "https://models.github.ai/inference/chat/completions" \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -d '{
+            "messages": [
+              {
+                "role": "user",
+                "content": "Explain the concept of recursion."
+              }
+            ],
+            "model": "openai/gpt-4o"
+          }')
+
+        echo "$RESPONSE" > raw_response.json
+
+        # If the response format is OpenAI-like, extract the message content text
+        # (you may need jq installed; it's available by default on GH runners)
+        echo "$RESPONSE" | jq -r '.choices[0].message.content[0].text' > ai_output.txt
+
+    - name: Upload result as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ai-output
+        path: |
+          raw_response.json
+          ai_output.txt
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
