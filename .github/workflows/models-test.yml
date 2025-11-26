@@ -45,7 +45,7 @@ jobs:
             "messages": [
               {
                 "role": "user",
-                "content": "run a code review of the main.py file in the repository"
+                "content": "Explain the concept of recursion."
               }
             ],
             "model": "openai/gpt-4o"
