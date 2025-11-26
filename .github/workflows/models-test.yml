@@ -5,7 +5,8 @@ on:
   pull_request:
 
 permissions:
-  models: read
+  contents: read      # needed for checkout + artifacts
+  models: read        # needed for GitHub Models API
 
 jobs:
   test:
@@ -32,36 +33,36 @@ jobs:
         run: pytest -q
 
   call-model:
-  runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
 
-  steps:
-    - name: Call AI model and save result
-    - run: |
-        RESPONSE=$(curl "https://models.github.ai/inference/chat/completions" \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer $GITHUB_TOKEN" \
-          -d '{
-            "messages": [
-              {
-                "role": "user",
-                "content": "Explain the concept of recursion."
-              }
-            ],
-            "model": "openai/gpt-4o"
-          }')
+    steps:
+      - name: Call AI model and save result
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RESPONSE=$(curl "https://models.github.ai/inference/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -d '{
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "Explain the concept of recursion."
+                }
+              ],
+              "model": "openai/gpt-4o"
+            }')
 
-        echo "$RESPONSE" > raw_response.json
+          echo "$RESPONSE" > raw_response.json
 
-        # If the response format is OpenAI-like, extract the message content text
-        # (you may need jq installed; it's available by default on GH runners)
-        echo "$RESPONSE" | jq -r '.choices[0].message.content[0].text' > ai_output.txt
+          # Extract the message content (OpenAI-style chat/completions response)
+          echo "$RESPONSE" | jq -r '.choices[0].message.content' > ai_output.txt
 
-    - name: Upload result as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ai-output
-        path: |
-          raw_response.json
-          ai_output.txt
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Upload result as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-output
+          path: |
+            raw_response.json
+            ai_output.txt
