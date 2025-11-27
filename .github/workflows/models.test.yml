@@ -50,7 +50,7 @@ jobs:
               "messages": [
                 {
                   "role": "user",
-                  "content": "Analyse ce code pour identifier des failles de sécurité potentielles (injections, secrets hardcodés, appels non sécurisés) :\n${{ steps.code.outputs.content }}"
+                  "content": "explain how to use github models api in ci cd pipeline"
                 }
               ],
               "model": "openai/gpt-4o"
