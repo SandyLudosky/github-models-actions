@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read      # needed for checkout + artifacts
+  models: read        # needed for GitHub Models API
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+          pip install openai pytest python-dotenv colorama
+
+      - name: Run tests
+        run: pytest -q
+
+  call-model:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call AI model and save result
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RESPONSE=$(curl "https://models.github.ai/inference/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -d '{
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "run a code review of the main.py file in the repository"
+                }
+              ],
+              "model": "openai/gpt-4o"
+            }')
+
+          echo "$RESPONSE" > raw_response.json
+
+          # Extract the message content (OpenAI-style chat/completions response)
+          echo "$RESPONSE" | jq -r '.choices[0].message.content' > ai_output.txt
+
+      - name: Upload result as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-output
+          path: |
+            raw_response.json
+            ai_output.txt

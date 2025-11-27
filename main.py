@@ -1,19 +1,25 @@
 import os
 import dotenv
 from colorama import Fore, Style
+from pprint import pprint
+from rich.console import Console # type: ignore
+
 from openai import OpenAI
 
 dotenv.load_dotenv()
 
-# 1. Récupérer le token GitHub
-github_token = os.getenv("OPENAI_API_KEY")
-# if not github_token:
-#     raise ValueError(
-#         "OPENAI_API_KEY environment variable is not set. "
-#         "Please set it with: export OPENAI_API_KEY='your_token_here'"
-#     )
+ 
+console = Console()
+console.rule("[bold blue]Demos - GitHub Models[/bold blue]")
 
-# 2. Initialiser le client pour GitHub Models
+# Get GitHub token from environment variable
+github_token = os.getenv("GITHUB_TOKEN")
+if not github_token:
+    raise ValueError(
+        "GITHUB_TOKEN environment variable is not set. "
+        "Please set it with: export GITHUB_TOKEN='your_token_here'"
+    )
+
 client = OpenAI(
     base_url="https://models.github.ai/inference",
     api_key=github_token,
@@ -22,80 +28,38 @@ client = OpenAI(
     },
 )
 
+messages = [{
+    "role": "system",
+    "content": (
+        "You are a specialist in translating from French to English. Provide the English translation for the given word along with examples of its usage in English. Adhere to any specific instructions provided, if applicable."
+    ),
+}]
+
 def main():
-    print("ASSISTANT IA (GitHub Models) \n– taper 'quit' pour sortir.\n")
-
-    messages = [
-        {
-            "role": "system",
-            "content": [
-                {
-                    "type": "text",
-                    "text": "Tu es un assistant utile, clair et concis, qui répond en français.",
-                },
-            ],
-        }
-    ]
-
+    print(Style.BRIGHT + "//==============*****Assistant IA/Traducteur*****===============//" + Style.RESET_ALL)
+    print(Fore.CYAN +  "\n-Taper votre question\n–Taper 'quit' pour sortir.\n" + Style.RESET_ALL)
+     
     while True:
         user_input = input("Vous: ")
+
         if user_input.lower() in ("quit", "exit", "q"):
             print(Style.BRIGHT + Fore.CYAN + "Assistant: À bientôt 👋" + Style.RESET_ALL)
             break
 
-        # Ajouter le message utilisateur à l'historique
-        messages.append({
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": user_input,
-                },
-            ],
-        })
+        messages.append({"role": "user", "content": user_input})
 
-        # Appel au modèle GitHub
-        response = client.chat.completions.create(
-            messages=messages,
-            model="openai/gpt-5",      # ou un autre modèle GitHub
-            reasoning_effort="medium", # optionnel selon le modèle
-        )
+        try:
+            response = client.chat.completions.create(
+                messages=messages,
+                model="gpt-4o-mini", 
+                temperature=1.0,
+            )
+            # console.print(response)
+            print(Style.BRIGHT + Fore.GREEN + response.choices[0].message.content + Style.RESET_ALL)
+     
+        except Exception as e:
+            print(e)
+            continue
     
-        assistant_message = response.choices[0].message
-
-        # Récupérer le texte de la réponse
-        text_parts = []
-        for part in assistant_message.content:
-            if hasattr(part, "type") and part.type == "text":
-                 text_parts.append(part.text)
-            elif isinstance(part, str):
-                 text_parts.append(part)
-                 
-        assistant_text = "\n".join(text_parts) 
-
-        print(Style.BRIGHT + Fore.CYAN + "🤖 IA:", assistant_text + Style.RESET_ALL)
-        print()
-
-        # Ajouter la réponse du modèle à l'historique
-        messages.append({
-            "role": "assistant",
-            "content": assistant_message.content,
-        })
-
-
-def start():
-    print(Fore.MAGENTA + "MENU" )
-    print("====")
-    print("[1]- Ask a question")
-    print("[2]- Exit" + Fore.RESET)
-    choice = input("Enter your choice: ")
-    if choice == "1":
-        main()
-    elif choice == "2":
-        exit()
-    else:
-        print("Invalid choice")
-
-
 if __name__ == "__main__":
-    start()
+    main()
