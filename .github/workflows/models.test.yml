@@ -14,11 +14,12 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
+
     steps:
-      - name: Checkout repository
+      - name: Checkout repositorys
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Sest up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -26,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -r requirements.txt || true
           pip install openai pytest python-dotenv colorama
 
       - name: Run tests
@@ -35,12 +36,12 @@ jobs:
   call-model:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
 
     steps:
       - name: Call AI model and save result
-        env:
-          # Built-in token with models:read from the permissions block above
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
         run: |
           RESPONSE=$(curl -sS "https://models.github.ai/inference/chat/completions" \
             -H "Accept: application/vnd.github+json" \
@@ -56,11 +57,6 @@ jobs:
                 }
               ]
             }')
-
-          echo "$RESPONSE" > raw_response.json
-
-          # Extract the message content (OpenAI-style chat/completions response)
-          echo "$RESPONSE" | jq -r '.choices[0].message.content' > ai_output.txt
 
       - name: Upload result as artifact
         uses: actions/upload-artifact@v4
