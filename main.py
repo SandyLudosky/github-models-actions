@@ -8,11 +8,11 @@ dotenv.load_dotenv()
 
 
 # Get GitHub token from environment variable
-github_token = os.getenv("GIT_TOKEN")
+github_token = os.getenv("OPENAI_API_KEY")
 if not github_token:
     raise ValueError(
-        "GIT_TOKEN environment variable is not set. "
-        "Please set it with: export GIT_TOKEN'your_token_here'"
+        "OPENAI_API_KEY environment variable is not set. "
+        "Please set it with: export OPENAI_API_KEY='your_token_here'"
     )
 
 client = OpenAI(
