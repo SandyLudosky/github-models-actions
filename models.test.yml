@@ -37,12 +37,11 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
 
     steps:
       - name: Call AI model and save result
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
         run: |
           RESPONSE=$(curl "https://models.github.ai/inference/chat/completions" \
             -H "Content-Type: application/json" \
