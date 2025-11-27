@@ -1,16 +1,11 @@
 import os
 import dotenv
 from colorama import Fore, Style
-from pprint import pprint
-from rich.console import Console # type: ignore
 
 from openai import OpenAI
 
 dotenv.load_dotenv()
 
- 
-console = Console()
-console.rule("[bold blue]Demos - GitHub Models[/bold blue]")
 
 # Get GitHub token from environment variable
 github_token = os.getenv("GITHUB_TOKEN")
