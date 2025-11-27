@@ -50,7 +50,7 @@ jobs:
               "messages": [
                 {
                   "role": "user",
-                  "content": "run a code review of the main.py file in the repository"
+                  "content": "Analyse ce code pour identifier des failles de sécurité potentielles (injections, secrets hardcodés, appels non sécurisés) :\n${{ steps.code.outputs.content }}"
                 }
               ],
               "model": "openai/gpt-4o"
