@@ -34,7 +34,7 @@ def test_start_menu_invalid(monkeypatch, capsys):
     monkeypatch.setattr(builtins, "input", lambda _: next(inputs))
     with patch("main.main") as mock_main:
         with patch("sys.exit") as mock_exit:
-            main.main()
+            main.start()
             out = capsys.readouterr().out
             assert "Invalid choice" in out
             # Should not call main for invalid input

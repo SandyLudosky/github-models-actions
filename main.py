@@ -55,6 +55,21 @@ def main():
         except Exception as e:
             print(e)
             continue
-    
+
+def start():
+    print(Fore.MAGENTA + "MENU" )
+    print("====")
+    print("[1]- Ask a question")
+    print("[2]- Exit" + Fore.RESET)
+    choice = input("Enter your choice: ")
+    if choice == "1":
+        main()
+    elif choice == "2":
+        exit()
+    else:
+        print("Invalid choice")
+
+
 if __name__ == "__main__":
-    main()
+    start()
+     
