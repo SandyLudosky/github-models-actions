@@ -1,22 +1,22 @@
-name: CI/CD
+name: Python Tests & GitHub Models Docs
 
 on:
   push:
+    branches: ["main"]
   pull_request:
+  workflow_dispatch: {}
 
 permissions:
-  contents: read      # needed for checkout + artifacts
-  models: read        # needed for GitHub Models API
+  contents: write   # needed to commit generated markdown
+  models: read      # needed to call GitHub Models
 
 jobs:
-  test:
+  tests:
+    name: Run Python Tests
     runs-on: ubuntu-latest
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
 
     steps:
-      - name: Checkout repositorys
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -27,41 +27,68 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install pytest
           pip install -r requirements.txt || true
-          pip install openai pytest python-dotenv colorama
 
       - name: Run tests
         run: pytest -q
 
-  call-model:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  generate-docs:
+    name: Generate GitHub Models Markdown
     runs-on: ubuntu-latest
-    env:
-      GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+    needs: tests   # 👈 only generate docs if tests pass
 
     steps:
-      - name: Call AI model and save result
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      - name: Call GitHub Models (generate markdown)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RESPONSE=$(curl -sS "https://models.github.ai/inference/chat/completions" \
-            -H "Accept: application/vnd.github+json" \
+          mkdir -p docs
+
+          RESPONSE=$(curl -s "https://models.github.ai/inference/chat/completions" \
             -H "Content-Type: application/json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             -d '{
               "model": "openai/gpt-4o",
               "messages": [
                 {
+                  "role": "system",
+                  "content": "You are a technical writer. Output Markdown only."
+                },
+                {
                   "role": "user",
-                  "content": "explain how to use github models api in ci cd pipeline"
+                  "content": "Write a README-style Markdown document explaining GitHub Models: what it is, how to use it with GitHub Actions, required permissions, an example curl request, and best practices."
                 }
               ]
             }')
 
-      - name: Upload result as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ai-output
-          path: |
-            raw_response.json
-            ai_output.txt
+          echo "$RESPONSE" > docs/github-models.response.json
+          jq -r '.choices[0].message.content' docs/github-models.response.json > docs/github-models.md
+
+      - name: Update README.md
+        run: |
+          if [ -f README.md ]; then
+            if ! grep -q "docs/github-models.md" README.md; then
+              printf "\n## GitHub Models\n\nSee: [docs/github-models.md](docs/github-models.md)\n" >> README.md
+            fi
+          else
+            cat > README.md << 'EOF'
+          # Project
+
+          ## GitHub Models
+
+          See: [docs/github-models.md](docs/github-models.md)
+          EOF
+          fi
+
+      - name: Commit generated documentation
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add docs/github-models.md docs/github-models.response.json README.md || true
+          git commit -m "docs: generate GitHub Models documentation (Markdown)" || exit 0
+          git push
